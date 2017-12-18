@@ -5,7 +5,7 @@ module Fastlane
       # as `Helper::DropboxHelper.your_method`
       #
       def self.show_message
-        UI.message("Hello from the dropbox plugin helper!")
+        UI.message('Hello from the dropbox plugin helper!')
       end
     end
   end
