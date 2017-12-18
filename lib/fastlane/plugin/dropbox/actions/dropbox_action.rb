@@ -94,7 +94,7 @@ module Fastlane
 
       def self.request_token(app_key, app_secret)
         sh("open 'https://www.dropbox.com/oauth2/authorize?response_type=code&require_role=work&client_id=#{app_key}'")
-        UI.message 'Please autorize fastlane Dropbox plugin (via your Dropbox app) to access your Dropbox account'
+        UI.message 'Please autorize fastlane Dropbox plugin to access your Dropbox account via your Dropbox app'
         authorization_code = UI.input('Once authorized, please paste the authorization code here: ')
 
         uri = URI('https://api.dropboxapi.com/oauth2/token')
