@@ -10,17 +10,28 @@ This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To 
 fastlane add_plugin dropbox
 ```
 
-## About dropbox
+## About
 
-Uploads files to Dropbox
+This plugin allows for uploading files to Dropbox from Fastlane, using provided Dropbox client application.
 
-**Note to author:** Add a more detailed description about this plugin here. If your plugin contains multiple actions, make sure to mention them here.
+## Setting up
+
+**Note:** Dropbox allows accessing their API only for authorized applications, so in order to use this plugin you must register a Dropbox app.
+
+In order to register a Dropbox app you need to go to [Dropbox Developers](https://www.dropbox.com/developers/apps) site and create your own app. 
+
+1. For Fastlane you only need the app key and app secret. You'll also have to come up with some name for the app, but this is not used by Fastlane in any way.
+1. You also don't need to apply for production state of your app, and keep it in development phase unless you make heavy use of it. Even Dropbox themselves encourage staying in development state when the app is used as an internal tool. Read more [here](https://www.dropbox.com/developers/reference/developer-guide#production-approval).
+1. You start with access for one user only, but in development state you can request access for up to 500 users, which should cover most of the use cases for Fastlane integration.
 
 ## Example
 
-Check out the [example `Fastfile`](fastlane/Fastfile) to see how to use this plugin. Try it by cloning the repo, running `fastlane install_plugins` and `bundle exec fastlane test`.
-
-**Note to author:** Please set up a sample project to make it easy for users to explore what your plugin does. Provide everything that is necessary to try out the plugin in this project (including a sample Xcode/Android project if necessary)
+    dropbox(
+        file_path: '/some/local-path/to/file.txt',
+        dropbox_path: '/path/to/Dropbox/destination/folder',
+        app_key: 'your-dropbox-app-key',
+        app_secret: 'your-dropbox-app-secret'
+    )
 
 ## Run tests for this plugin
 
