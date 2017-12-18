@@ -12,10 +12,10 @@ module Fastlane
         UI.message "Starting upload of #{params[:file_path]} to Dropbox"
         UI.message ""
 
-        access_token = get_token_from_keychain
+        access_token = get_token_from_keychain(params[:keychain], params[:keychain_password])
         unless access_token
           access_token = request_token(params[:app_key], params[:app_secret])
-          unless save_token_to_keychain(access_token)
+          unless save_token_to_keychain(params[:keychain], access_token)
             UI.user_error! "Failed to store access token in the keychain"
           end
         end
@@ -60,15 +60,18 @@ module Fastlane
 
       end
 
-      def self.get_token_from_keychain
-        default_keychain_path = `security default-keychain`.chomp.gsub(/.+"(.+)"/, "\\1")
-        other_action.unlock_keychain(path: default_keychain_path)
+      def self.get_token_from_keychain(keychain, password)
+        keychain_path = keychain or `security default-keychain`.chomp.gsub(/.+"(.+)"/, "\\1")
+        other_action.unlock_keychain(
+          path: default_keychain_path,
+          password: password
+          )
         token = `security find-generic-password -s #{KEYCHAIN_SERVICE_NAME} -w 2>/dev/null`.chomp
         return $? >> 8 == 0 ? token : nil
       end
 
-      def self.save_token_to_keychain(access_token)
-        `security add-generic-password -a #{KEYCHAIN_SERVICE_NAME} -s #{KEYCHAIN_SERVICE_NAME} -w "#{access_token}"`
+      def self.save_token_to_keychain(keychain, access_token)
+        `security add-generic-password -a #{KEYCHAIN_SERVICE_NAME} -s #{KEYCHAIN_SERVICE_NAME} -w "#{access_token}" "#{keychain}"`
         return $? >> 8 == 0
       end
 
@@ -159,7 +162,20 @@ module Fastlane
                                        optional: false,
                                        verify_block: proc do |value|
                                           UI.user_error!("App Secret not specified for Dropbox app. Provide your app's App Secret or create a new app at https://www.dropbox.com/developers if you don't have an app yet.") unless (value and not value.empty?)
-                                       end)
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :keychain,
+                                       env_name: "DROPBOX_KEYCHAIN",
+                                       description: "Path to keychain where the access token would be stored. Will use default keychain if no value is provided",
+                                       type: String,
+                                       optional: true,
+                                       verify_block: proc do |value|
+                                          UI.user_error!("Couldn't find keychain at path '#{value}'") unless File.exist?(value)
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :keychain_password,
+                                       env_name: "DROPBOX_KEYCHAIN_PASSWORD",
+                                       description: "Password to unlock keychain. If not provided, the plugin would ask for password",
+                                       type: String,
+                                       optional: true)
         ]
       end
 
@@ -167,10 +183,22 @@ module Fastlane
       end
 
       def self.return_value
+        "nil or error message"
       end
 
       def self.authors
         ["Dominik Kapusta"]
+      end
+
+      def self.example_code
+        [
+          'dropbox(
+            file_path: "./path/to/file.txt",
+            dropbox_path: "/My Dropbox Folder/Text files",
+            app_key: "dropbox-app-key",
+            app_secret: "dropbox-app-secret"
+          )'
+        ]
       end
 
       def self.is_supported?(platform)
