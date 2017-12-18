@@ -8,10 +8,10 @@ Gem::Specification.new do |spec|
   spec.name          = 'fastlane-plugin-dropbox'
   spec.version       = Fastlane::Dropbox::VERSION
   spec.author        = 'Dominik Kapusta'
-  spec.email         = 'dominik@getbase.com'
+  spec.email         = 'dominik@kapusta.cc'
 
   spec.summary       = 'Uploads files to Dropbox'
-  # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-dropbox"
+  spec.homepage      = "https://github.com/ayoy/fastlane-plugin-dropbox"
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   # Don't add a dependency to fastlane or fastlane_re
   # since this would cause a circular dependency
 
-  # spec.add_dependency 'your-dependency', '~> 1.0.0'
+  spec.add_dependency 'dropbox_api'
 
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'bundler'
