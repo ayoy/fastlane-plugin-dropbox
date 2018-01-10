@@ -28,7 +28,13 @@ module Fastlane
         chunk_size = 157_286_400 # 150 megabytes
 
         if File.size(params[:file_path]) < chunk_size
-          file = client.upload destination_path(params), File.read(params[:file_path])
+          if params[:overwrite]
+            file = client.upload(destination_path(params), File.read(params[:file_path]), {
+              :mode => :overwrite
+            })
+          else
+            file = client.upload destination_path(params), File.read(params[:file_path])
+          end
           output_file_name = file.name
         else
           parts = chunker params[:file_path], './part', chunk_size
@@ -148,6 +154,11 @@ module Fastlane
                                        description: 'Path to the destination Dropbox folder',
                                        type: String,
                                        optional: true),
+          FastlaneCore::ConfigItem.new(key: :overwrite,
+                                       env_name: 'DROPBOX_OVERWRITE',
+                                       description: 'Overwrite file if exists on Dropbox',
+                                       type: Boolean,
+                                       optional: false),
           FastlaneCore::ConfigItem.new(key: :app_key,
                                        env_name: 'DROPBOX_APP_KEY',
                                        description: 'App Key of your Dropbox app',
@@ -195,6 +206,7 @@ module Fastlane
           'dropbox(
             file_path: "./path/to/file.txt",
             dropbox_path: "/My Dropbox Folder/Text files",
+            overwrite: "true/false",
             app_key: "dropbox-app-key",
             app_secret: "dropbox-app-secret"
           )'
