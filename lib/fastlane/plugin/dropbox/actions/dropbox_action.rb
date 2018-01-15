@@ -28,13 +28,9 @@ module Fastlane
         chunk_size = 157_286_400 # 150 megabytes
 
         if File.size(params[:file_path]) < chunk_size
-          if params[:overwrite]
-            file = client.upload(destination_path(params), File.read(params[:file_path]), {
-              :mode => :overwrite
-            })
-          else
-            file = client.upload destination_path(params), File.read(params[:file_path])
-          end
+          file = client.upload(destination_path(params), File.read(params[:file_path]), {
+            :mode => writemode
+          })
           output_file_name = file.name
         else
           parts = chunker params[:file_path], './part', chunk_size
@@ -50,7 +46,7 @@ module Fastlane
             client.upload_session_append_v2 cursor, File.read(part)
           end
           file = client.upload_session_finish cursor, DropboxApi::Metadata::CommitInfo.new('path' => destination_path(params),
-                                                                                           'mode' => :add)
+                                                                                           'mode' => writemode)
           output_file_name = file.name
           parts.each { |part| File.delete(part) }
         end
@@ -154,11 +150,14 @@ module Fastlane
                                        description: 'Path to the destination Dropbox folder',
                                        type: String,
                                        optional: true),
-          FastlaneCore::ConfigItem.new(key: :overwrite,
-                                       env_name: 'DROPBOX_OVERWRITE',
-                                       description: 'Overwrite file if exists on Dropbox',
-                                       type: Boolean,
-                                       optional: false),
+          FastlaneCore::ConfigItem.new(key: :writemode,
+                                       env_name: 'DROPBOX_WRITEMODE',
+                                       description: 'Determines writemode. Supports add, overwrite, update',
+                                       type: String,
+                                       optional: false,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Writemode not specified correctly (add/overwrite/update).") unless value.eql? "add" || value.eql? "overwrite" || value.eql? "update"
+                                       end),
           FastlaneCore::ConfigItem.new(key: :app_key,
                                        env_name: 'DROPBOX_APP_KEY',
                                        description: 'App Key of your Dropbox app',
@@ -206,7 +205,7 @@ module Fastlane
           'dropbox(
             file_path: "./path/to/file.txt",
             dropbox_path: "/My Dropbox Folder/Text files",
-            overwrite: "true/false",
+            writemode: "add/overwrite/update",
             app_key: "dropbox-app-key",
             app_secret: "dropbox-app-secret"
           )'

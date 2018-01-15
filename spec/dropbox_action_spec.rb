@@ -10,7 +10,7 @@ describe Fastlane::Actions::DropboxAction do
   describe '#run' do
     let(:file_path) { '/path/to/file.txt' }
     let(:dropbox_path) { '/dropbox-folder' }
-    let(:overwrite) { 'true/false' }
+    let(:writemode) { 'add/overwrite/update' }
     let(:destination_path) { "#{dropbox_path}/#{File.basename(file_path)}" }
     let(:file_data) { 'file-data' }
 
@@ -18,7 +18,7 @@ describe Fastlane::Actions::DropboxAction do
       {
         file_path: file_path,
         dropbox_path: dropbox_path,
-        overwrite: false,
+        writemode: 'add',
         app_key: 'dropbox-app-key',
         app_secret: 'dropbox-app-secret',
         keychain: '/path/to/keychain',
