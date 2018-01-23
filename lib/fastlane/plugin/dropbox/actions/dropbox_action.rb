@@ -28,7 +28,23 @@ module Fastlane
         chunk_size = 157_286_400 # 150 megabytes
 
         if File.size(params[:file_path]) < chunk_size
-          file = client.upload destination_path(params), File.read(params[:file_path])
+          UI.message ''
+          UI.important "Uploading files with #{params[:writemode]} mode."
+          UI.message ''
+
+          if params[:writemode].eql? 'update'
+            file = client.upload(destination_path(params), File.read(params[:file_path]), {
+              "mode" => {
+                ".tag" => "update",
+                "update" => params[:update_rev]
+              }
+            })
+          else
+            file = client.upload(destination_path(params), File.read(params[:file_path]), {
+              :mode => params[:writemode]
+            })
+          end
+
           output_file_name = file.name
         else
           parts = chunker params[:file_path], './part', chunk_size
@@ -44,7 +60,7 @@ module Fastlane
             client.upload_session_append_v2 cursor, File.read(part)
           end
           file = client.upload_session_finish cursor, DropboxApi::Metadata::CommitInfo.new('path' => destination_path(params),
-                                                                                           'mode' => :add)
+                                                                                           'mode' => params[:writemode])
           output_file_name = file.name
           parts.each { |part| File.delete(part) }
         end
@@ -148,6 +164,22 @@ module Fastlane
                                        description: 'Path to the destination Dropbox folder',
                                        type: String,
                                        optional: true),
+          FastlaneCore::ConfigItem.new(key: :writemode,
+                                       env_name: 'DROPBOX_WRITEMODE',
+                                       description: 'Determines writemode. Supports add, overwrite, update',
+                                       type: String,
+                                       optional: true,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Writemode not specified correctly (add/overwrite/update).") unless value =~ /(add|overwrite|update)/
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :update_rev,
+                                       env_name: 'DROPBOX_UPDATE_REV',
+                                       description: 'Revision no. to update',
+                                       type: String,
+                                       optional: true,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Revison no. must be at least 9 characters.") unless value.length >= 9
+                                       end),
           FastlaneCore::ConfigItem.new(key: :app_key,
                                        env_name: 'DROPBOX_APP_KEY',
                                        description: 'App Key of your Dropbox app',
@@ -195,6 +227,8 @@ module Fastlane
           'dropbox(
             file_path: "./path/to/file.txt",
             dropbox_path: "/My Dropbox Folder/Text files",
+            writemode: "add/overwrite/update",
+            update_rev: "a1c10ce0dd78",
             app_key: "dropbox-app-key",
             app_secret: "dropbox-app-secret"
           )'
