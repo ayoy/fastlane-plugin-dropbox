@@ -1,8 +1,11 @@
 require 'dropbox_api'
 
-class String
-  def name
-    File.basename(self)
+class DropboxFileStub
+  attr_reader :path, :name, :rev
+  def initialize(path, name, rev)
+    @path = path
+    @name = name
+    @rev = rev
   end
 end
 
@@ -10,10 +13,12 @@ describe Fastlane::Actions::DropboxAction do
   describe '#run' do
     let(:file_path) { '/path/to/file.txt' }
     let(:dropbox_path) { '/dropbox-folder' }
-    let(:writemode) { 'add/overwrite/update' }
-    let(:update_rev) { 'a1c10ce0dd78' }
     let(:destination_path) { "#{dropbox_path}/#{File.basename(file_path)}" }
+    let(:file_rev) { "0123456789abcdef" }
     let(:file_data) { 'file-data' }
+    let(:output_file) do
+      DropboxFileStub.new(destination_path, File.basename(file_path), file_rev)
+    end
 
     let(:params) do
       {
@@ -30,8 +35,7 @@ describe Fastlane::Actions::DropboxAction do
 
     shared_context 'with valid parameters' do
       before do
-        allow_any_instance_of(DropboxApi::Client).to receive(:upload)
-          .with(destination_path, file_data)
+        allow(Fastlane::Actions::DropboxAction).to receive(:destination_path)
           .and_return(destination_path)
         allow(Fastlane::Actions::DropboxAction).to receive(:get_token_from_keychain)
           .with(params[:keychain], params[:keychain_password])
@@ -49,11 +53,14 @@ describe Fastlane::Actions::DropboxAction do
         allow(File).to receive(:read)
           .with(params[:file_path])
           .and_return(file_data)
+        allow(Fastlane::Actions::DropboxAction).to receive(:upload)
+          .and_return(output_file)
       end
 
       include_context 'with valid parameters' do
         it 'should be uploaded to dropbox' do
-          expect(Fastlane::UI).to receive(:success).with("Successfully uploaded archive to Dropbox at '#{destination_path}'")
+          expect(Fastlane::UI).to receive(:success).with("File revision: '#{output_file.rev}'")
+          expect(Fastlane::UI).to receive(:success).with("Successfully uploaded file to Dropbox at '#{output_file.path}'")
           Fastlane::Actions::DropboxAction.run(params)
         end
       end
@@ -79,13 +86,14 @@ describe Fastlane::Actions::DropboxAction do
         allow_any_instance_of(DropboxApi::Client).to receive(:upload_session_append_v2)
           .and_return('cursor')
         allow_any_instance_of(DropboxApi::Client).to receive(:upload_session_finish)
-          .and_return(destination_path)
+          .and_return(output_file)
       end
 
       include_context 'with valid parameters' do
         it 'should be uploaded to dropbox' do
           expect(Fastlane::UI).to receive(:important).with(/big file/)
-          expect(Fastlane::UI).to receive(:success).with("Successfully uploaded archive to Dropbox at '#{destination_path}'")
+          expect(Fastlane::UI).to receive(:success).with("File revision: '#{output_file.rev}'")
+          expect(Fastlane::UI).to receive(:success).with("Successfully uploaded file to Dropbox at '#{output_file.path}'")
           expect_any_instance_of(DropboxApi::Client).to receive(:upload_session_start)
             .exactly(1).times
           expect_any_instance_of(DropboxApi::Client).to receive(:upload_session_append_v2)

@@ -13,7 +13,7 @@ module Fastlane
 
         params[:keychain] ||= default_keychain
 
-        write_mode = 
+        write_mode =
           if params[:write_mode].nil?
             'add'
           elsif params[:write_mode].eql? 'update'
@@ -55,34 +55,33 @@ module Fastlane
 
       def self.upload(client, file_path, destination_path, write_mode)
         begin
-          client.upload destination_path, File.read(file_path), :mode => write_mode
+          client.upload destination_path, File.read(file_path), mode: write_mode
         rescue DropboxApi::Errors::UploadWriteFailedError => e
           UI.user_error! "Failed to upload file to Dropbox. Error message returned by Dropbox API: \"#{e.message}\""
         end
       end
 
       def self.upload_chunked(client, chunk_size, file_path, destination_path, write_mode)
-          parts = chunker file_path, './part', chunk_size
-          UI.message ''
-          UI.important "The archive is a big file so we're uploading it in 150MB chunks"
-          UI.message ''
+        parts = chunker file_path, './part', chunk_size
+        UI.message ''
+        UI.important "The archive is a big file so we're uploading it in 150MB chunks"
+        UI.message ''
 
-          begin
-            UI.message "Uploading part #1 (#{File.size(parts[0])} bytes)..."
-            cursor = client.upload_session_start File.read(parts[0])
-            parts[1..parts.size].each_with_index do |part, index|
-              UI.message "Uploading part ##{index + 2} (#{File.size(part)} bytes)..."
-              client.upload_session_append_v2 cursor, File.read(part)
-            end
-
-            client.upload_session_finish cursor, DropboxApi::Metadata::CommitInfo.new(:path => destination_path,
-                                                                                      :mode => write_mode)
-
-          rescue DropboxApi::Errors::UploadWriteFailedError => e
-            UI.user_error! "Error uploading file to Dropbox: \"#{e.message}\""
-          ensure
-            parts.each { |part| File.delete(part) }
+        begin
+          UI.message "Uploading part #1 (#{File.size(parts[0])} bytes)..."
+          cursor = client.upload_session_start File.read(parts[0])
+          parts[1..parts.size].each_with_index do |part, index|
+            UI.message "Uploading part ##{index + 2} (#{File.size(part)} bytes)..."
+            client.upload_session_append_v2 cursor, File.read(part)
           end
+
+          client.upload_session_finish cursor, DropboxApi::Metadata::CommitInfo.new('path' => destination_path,
+                                                                                    'mode' => write_mode)
+        rescue DropboxApi::Errors::UploadWriteFailedError => e
+          UI.user_error! "Error uploading file to Dropbox: \"#{e.message}\""
+        ensure
+          parts.each { |part| File.delete(part) }
+        end
       end
 
       def self.destination_path(params)
