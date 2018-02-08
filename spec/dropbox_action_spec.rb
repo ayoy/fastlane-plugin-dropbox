@@ -24,7 +24,7 @@ describe Fastlane::Actions::DropboxAction do
       {
         file_path: file_path,
         dropbox_path: dropbox_path,
-        writemode: 'add',
+        write_mode: 'add',
         update_rev: 'a1c10ce0dd78',
         app_key: 'dropbox-app-key',
         app_secret: 'dropbox-app-secret',
@@ -40,6 +40,46 @@ describe Fastlane::Actions::DropboxAction do
         allow(Fastlane::Actions::DropboxAction).to receive(:get_token_from_keychain)
           .with(params[:keychain], params[:keychain_password])
           .and_return('4CC355-T0K3N')
+        allow_any_instance_of(DropboxApi::Client).to receive(:upload)
+          .and_return(output_file)
+      end
+    end
+
+    describe 'write mode' do
+      before do
+        params.delete(:write_mode)
+
+        allow(File).to receive(:size)
+          .with(params[:file_path])
+          .and_return(16_384)
+        allow(Fastlane::Actions::DropboxAction).to receive(:upload)
+          .and_return(output_file)
+      end
+
+      include_context 'with valid parameters' do
+        it 'should use \'add\' write_mode by default' do
+          expect(Fastlane::Actions::DropboxAction).to receive(:upload)
+            .with(anything, anything, anything, 'add')
+
+          Fastlane::Actions::DropboxAction.run(params)
+        end
+
+        it 'should recognize \'overwrite\' write_mode' do
+          params[:write_mode] ||= 'overwrite'
+          expect(Fastlane::Actions::DropboxAction).to receive(:upload)
+            .with(anything, anything, anything, params[:write_mode])
+
+          Fastlane::Actions::DropboxAction.run(params)
+        end
+
+        it 'should require file revision in \'update\' write_mode' do
+          params[:write_mode] ||= 'update'
+          params.delete(:update_rev)
+          expect(Fastlane::UI).to receive(:user_error!)
+            .with('You need to specify `update_rev` when using `update` write_mode.')
+
+          Fastlane::Actions::DropboxAction.run(params)
+        end
       end
     end
 
@@ -53,8 +93,6 @@ describe Fastlane::Actions::DropboxAction do
         allow(File).to receive(:read)
           .with(params[:file_path])
           .and_return(file_data)
-        allow(Fastlane::Actions::DropboxAction).to receive(:upload)
-          .and_return(output_file)
       end
 
       include_context 'with valid parameters' do

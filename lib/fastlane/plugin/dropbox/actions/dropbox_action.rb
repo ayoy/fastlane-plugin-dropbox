@@ -17,10 +17,14 @@ module Fastlane
           if params[:write_mode].nil?
             'add'
           elsif params[:write_mode].eql? 'update'
-            DropboxApi::Metadata::WriteMode.new({
-                '.tag' => 'update',
-                'update' => params[:update_rev]
-              })
+            if params[:update_rev].nil?
+              UI.user_error! 'You need to specify `update_rev` when using `update` write_mode.'
+            else
+              DropboxApi::Metadata::WriteMode.new({
+                  '.tag' => 'update',
+                  'update' => params[:update_rev]
+                })
+            end
           else
             params[:write_mode]
           end
