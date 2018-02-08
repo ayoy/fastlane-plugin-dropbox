@@ -26,14 +26,42 @@ In order to register a Dropbox app you need to go to [Dropbox Developers](https:
 
 ## Example
 
+# Basic usage
+
     dropbox(
         file_path: '/some/local-path/to/file.txt',
         dropbox_path: '/path/to/Dropbox/destination/folder',
-        write_mode: "update",
-        update_rev: "file-revision-to-update",
         app_key: 'your-dropbox-app-key',
         app_secret: 'your-dropbox-app-secret'
     )
+
+The `dropbox_path` parameter is optional - if not provided, the file at `file_path` would be put in the Dropbox root directory.
+
+# Write modes
+
+The default `write_mode` is `add`, which means that plugin will raise an error if the file already exists at the destination path. If you want to allow for overwriting, set the `write_mode` parameter like so:
+
+    dropbox(
+        file_path: '/some/local-path/to/file.txt',
+        dropbox_path: '/path/to/Dropbox/destination/folder',
+        write_mode: 'overwrite',
+        app_key: 'your-dropbox-app-key',
+        app_secret: 'your-dropbox-app-secret'
+    )
+
+For the more fine-grained overwriting you can set the `update` write mode, and pass the current file revision to update:
+
+    dropbox(
+        file_path: '/some/local-path/to/file.txt',
+        dropbox_path: '/path/to/Dropbox/destination/folder',
+        write_mode: 'update',
+        update_rev: 'filerevisiontoupdate',
+        app_key: 'your-dropbox-app-key',
+        app_secret: 'your-dropbox-app-secret'
+    )
+
+The `update_rev` parameter is required for `update` write mode and ignored in other cases. Currently, if the current file revision on Dropbox doesn't match the provided revision, the plugin will fail (Dropbox API won't allow for the update).
+
 
 ## Run tests for this plugin
 
