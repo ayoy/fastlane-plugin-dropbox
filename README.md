@@ -1,8 +1,6 @@
 # Fastlane Dropbox plugin
 
-[![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-dropbox)
-
-[![Gem Version](https://badge.fury.io/rb/fastlane-plugin-dropbox.svg)](https://badge.fury.io/rb/fastlane-plugin-dropbox)
+[![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-dropbox) [![Gem Version](https://badge.fury.io/rb/fastlane-plugin-dropbox.svg)](https://badge.fury.io/rb/fastlane-plugin-dropbox)
 
 ## Getting Started
 
