@@ -26,7 +26,7 @@ In order to register a Dropbox app you need to go to [Dropbox Developers](https:
 
 ## Example
 
-# Basic usage
+### Basic usage
 
     dropbox(
         file_path: '/some/local-path/to/file.txt',
@@ -37,7 +37,7 @@ In order to register a Dropbox app you need to go to [Dropbox Developers](https:
 
 The `dropbox_path` parameter is optional - if not provided, the file at `file_path` would be put in the Dropbox root directory.
 
-# Write modes
+### Write modes
 
 The default `write_mode` is `add`, which means that plugin will raise an error if the file already exists at the destination path. If you want to allow for overwriting, set the `write_mode` parameter like so:
 
