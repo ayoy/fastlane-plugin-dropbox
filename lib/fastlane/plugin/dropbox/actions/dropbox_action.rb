@@ -13,6 +13,18 @@ module Fastlane
 
         params[:keychain] ||= default_keychain
 
+        write_mode = 
+          if params[:write_mode].nil?
+            'add'
+          elsif params[:write_mode].eql? 'update'
+            DropboxApi::Metadata::WriteMode.new({
+                '.tag' => 'update',
+                'update' => params[:update_rev]
+              })
+          else
+            params[:write_mode]
+          end
+
         access_token = get_token_from_keychain(params[:keychain], params[:keychain_password])
         unless access_token
           access_token = request_token(params[:app_key], params[:app_secret])
@@ -23,53 +35,54 @@ module Fastlane
 
         client = DropboxApi::Client.new(access_token)
 
-        output_file_name = nil
+        output_file = nil
 
         chunk_size = 157_286_400 # 150 megabytes
 
         if File.size(params[:file_path]) < chunk_size
-          UI.message ''
-          UI.important "Uploading files with #{params[:writemode]} mode."
-          UI.message ''
-
-          if params[:writemode].eql? 'update'
-            file = client.upload(destination_path(params), File.read(params[:file_path]), {
-              "mode" => {
-                ".tag" => "update",
-                "update" => params[:update_rev]
-              }
-            })
-          else
-            file = client.upload(destination_path(params), File.read(params[:file_path]), {
-              :mode => params[:writemode]
-            })
-          end
-
-          output_file_name = file.name
+          output_file = upload(client, params[:file_path], destination_path(params), write_mode)
         else
-          parts = chunker params[:file_path], './part', chunk_size
+          output_file = upload_chunked(client, chunk_size, params[:file_path], destination_path(params), write_mode)
+        end
 
+        if output_file.name != File.basename(params[:file_path])
+          UI.user_error! 'Failed to upload file to Dropbox'
+        else
+          UI.success "File revision: '#{output_file.rev}'"
+          UI.success "Successfully uploaded file to Dropbox at '#{destination_path(params)}'"
+        end
+      end
+
+      def self.upload(client, file_path, destination_path, write_mode)
+        begin
+          client.upload destination_path, File.read(file_path), :mode => write_mode
+        rescue DropboxApi::Errors::UploadWriteFailedError => e
+          UI.user_error! "Failed to upload file to Dropbox. Error message returned by Dropbox API: \"#{e.message}\""
+        end
+      end
+
+      def self.upload_chunked(client, chunk_size, file_path, destination_path, write_mode)
+          parts = chunker file_path, './part', chunk_size
           UI.message ''
           UI.important "The archive is a big file so we're uploading it in 150MB chunks"
           UI.message ''
 
-          UI.message "Uploading part #1 (#{File.size(parts[0])} bytes)..."
-          cursor = client.upload_session_start File.read(parts[0])
-          parts[1..parts.size].each_with_index do |part, index|
-            UI.message "Uploading part ##{index + 2} (#{File.size(part)} bytes)..."
-            client.upload_session_append_v2 cursor, File.read(part)
-          end
-          file = client.upload_session_finish cursor, DropboxApi::Metadata::CommitInfo.new('path' => destination_path(params),
-                                                                                           'mode' => params[:writemode])
-          output_file_name = file.name
-          parts.each { |part| File.delete(part) }
-        end
+          begin
+            UI.message "Uploading part #1 (#{File.size(parts[0])} bytes)..."
+            cursor = client.upload_session_start File.read(parts[0])
+            parts[1..parts.size].each_with_index do |part, index|
+              UI.message "Uploading part ##{index + 2} (#{File.size(part)} bytes)..."
+              client.upload_session_append_v2 cursor, File.read(part)
+            end
 
-        if output_file_name != File.basename(params[:file_path])
-          UI.user_error! 'Failed to upload archive to Dropbox'
-        else
-          UI.success "Successfully uploaded archive to Dropbox at '#{destination_path(params)}'"
-        end
+            client.upload_session_finish cursor, DropboxApi::Metadata::CommitInfo.new(:path => destination_path,
+                                                                                      :mode => write_mode)
+
+          rescue DropboxApi::Errors::UploadWriteFailedError => e
+            UI.user_error! "Error uploading file to Dropbox: \"#{e.message}\""
+          ensure
+            parts.each { |part| File.delete(part) }
+          end
       end
 
       def self.destination_path(params)
@@ -164,21 +177,21 @@ module Fastlane
                                        description: 'Path to the destination Dropbox folder',
                                        type: String,
                                        optional: true),
-          FastlaneCore::ConfigItem.new(key: :writemode,
-                                       env_name: 'DROPBOX_WRITEMODE',
-                                       description: 'Determines writemode. Supports add, overwrite, update',
+          FastlaneCore::ConfigItem.new(key: :write_mode,
+                                       env_name: 'DROPBOX_WRITE_MODE',
+                                       description: 'Determines uploaded file write mode. Supports `add`, `overwrite` and `update`',
                                        type: String,
                                        optional: true,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Writemode not specified correctly (add/overwrite/update).") unless value =~ /(add|overwrite|update)/
+                                         UI.command_output("write_mode '#{value}' not recognized. Defaulting to `add`.") unless value =~ /(add|overwrite|update)/
                                        end),
           FastlaneCore::ConfigItem.new(key: :update_rev,
                                        env_name: 'DROPBOX_UPDATE_REV',
-                                       description: 'Revision no. to update',
+                                       description: 'Revision of the file uploaded in `update` write_mode',
                                        type: String,
                                        optional: true,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Revison no. must be at least 9 characters.") unless value.length >= 9
+                                         UI.user_error!("Revision no. must be at least 9 hexadecimal characters ([0-9a-f]).") unless value =~ /[0-9a-f]{9,}/
                                        end),
           FastlaneCore::ConfigItem.new(key: :app_key,
                                        env_name: 'DROPBOX_APP_KEY',
@@ -227,7 +240,7 @@ module Fastlane
           'dropbox(
             file_path: "./path/to/file.txt",
             dropbox_path: "/My Dropbox Folder/Text files",
-            writemode: "add/overwrite/update",
+            write_mode: "add/overwrite/update",
             update_rev: "a1c10ce0dd78",
             app_key: "dropbox-app-key",
             app_secret: "dropbox-app-secret"

@@ -31,8 +31,8 @@ In order to register a Dropbox app you need to go to [Dropbox Developers](https:
     dropbox(
         file_path: '/some/local-path/to/file.txt',
         dropbox_path: '/path/to/Dropbox/destination/folder',
-        writemode: "add/overwrite/update",
-        update_rev: "rev1si0n-no-to-update",
+        write_mode: "update",
+        update_rev: "file-revision-to-update",
         app_key: 'your-dropbox-app-key',
         app_secret: 'your-dropbox-app-secret'
     )
