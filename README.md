@@ -14,6 +14,10 @@ fastlane add_plugin dropbox
 
 This plugin allows for uploading files to Dropbox from Fastlane, using provided Dropbox client application.
 
+## Requirements
+
+This plugin relies on MacOS keychain (for storing your Dropbox access token), hence it would work only on MacOS at the moment.
+
 ## Setting up
 
 **Note:** Dropbox allows accessing their API only for authorized applications, so in order to use this plugin you must register a Dropbox app.
