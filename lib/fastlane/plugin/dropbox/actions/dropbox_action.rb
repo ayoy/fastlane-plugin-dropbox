@@ -7,6 +7,8 @@ module Fastlane
       KEYCHAIN_SERVICE_NAME = 'fastlane-plugin-dropbox'.freeze
 
       def self.run(params)
+        validate_params(params)
+
         UI.message ''
         UI.message "Starting upload of #{params[:file_path]} to Dropbox"
         UI.message ''
@@ -29,7 +31,7 @@ module Fastlane
             params[:write_mode]
           end
 
-        access_token = get_token_from_keychain(params[:keychain], params[:keychain_password])
+        access_token = params[:access_token] || get_token_from_keychain(params[:keychain], params[:keychain_password])
         unless access_token
           access_token = request_token(params[:app_key], params[:app_secret])
           unless save_token_to_keychain(params[:keychain], access_token)
@@ -152,6 +154,13 @@ module Fastlane
         end
       end
 
+      def self.validate_params(params)
+        return if params[:access_token] && !params[:access_token].empty?
+
+        UI.user_error!("App Key not specified for Dropbox app. Provide your app's App Key or create a new app at https://www.dropbox.com/developers if you don't have an app yet.") unless params[:app_key] && !params[:app_key].empty?
+        UI.user_error!("App Secret not specified for Dropbox app. Provide your app's App Secret or create a new app at https://www.dropbox.com/developers if you don't have an app yet.") unless params[:app_secret] && !params[:app_secret].empty?
+      end
+
       #####################################################
       # @!group Documentation
       #####################################################
@@ -161,7 +170,7 @@ module Fastlane
       end
 
       def self.details
-        'You have to authorize the action before using it. The access token is stored in your default keychain'
+        'You have to authorize the action before using it. The access token is stored in your default keychain or passed in'
       end
 
       def self.available_options
@@ -200,18 +209,12 @@ module Fastlane
                                        env_name: 'DROPBOX_APP_KEY',
                                        description: 'App Key of your Dropbox app',
                                        type: String,
-                                       optional: false,
-                                       verify_block: proc do |value|
-                                         UI.user_error!("App Key not specified for Dropbox app. Provide your app's App Key or create a new app at https://www.dropbox.com/developers if you don't have an app yet.") unless value && !value.empty?
-                                       end),
+                                       optional: true),
           FastlaneCore::ConfigItem.new(key: :app_secret,
                                        env_name: 'DROPBOX_APP_SECRET',
                                        description: 'App Secret of your Dropbox app',
                                        type: String,
-                                       optional: false,
-                                       verify_block: proc do |value|
-                                         UI.user_error!("App Secret not specified for Dropbox app. Provide your app's App Secret or create a new app at https://www.dropbox.com/developers if you don't have an app yet.") unless value && !value.empty?
-                                       end),
+                                       optional: true),
           FastlaneCore::ConfigItem.new(key: :keychain,
                                        env_name: 'DROPBOX_KEYCHAIN',
                                        description: 'Path to keychain where the access token would be stored. Will use default keychain if no value is provided',
@@ -223,6 +226,11 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :keychain_password,
                                        env_name: 'DROPBOX_KEYCHAIN_PASSWORD',
                                        description: 'Password to unlock keychain. If not provided, the plugin would ask for password',
+                                       type: String,
+                                       optional: true),
+          FastlaneCore::ConfigItem.new(key: :access_token,
+                                       env_name: 'DROPBOX_ACCESS_TOKEN',
+                                       description: 'Access Token to authenticate with the Dropbox API',
                                        type: String,
                                        optional: true)
         ]
