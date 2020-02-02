@@ -25,13 +25,25 @@ This plugin relies on MacOS keychain (for storing your Dropbox access token), he
 
 In order to register a Dropbox app you need to go to [Dropbox Developers](https://www.dropbox.com/developers/apps) site and create your own app. 
 
-1. For Fastlane you only need the app key and app secret. You'll also have to come up with some name for the app, but this is not used by Fastlane in any way.
+### Using access token
+
+1. For Fastlane you only need the access token (or the app key and app secret). You'll also have to come up with some name for the app, but this is not used by Fastlane in any way.
 1. You also don't need to apply for production state of your app, and keep it in development phase unless you make heavy use of it. Even Dropbox themselves encourage staying in development state when the app is used as an internal tool. Read more [here](https://www.dropbox.com/developers/reference/developer-guide#production-approval).
 1. You start with access for one user only, but in development state you can request access for up to 500 users, which should cover most of the use cases for Fastlane integration.
 
 ## Example
 
 ### Basic usage
+
+Using access token:
+
+    dropbox(
+        file_path: '/some/local-path/to/file.txt',
+        dropbox_path: '/path/to/Dropbox/destination/folder',
+        access_token: 'your-dropbox-access-token'
+    )
+
+Using app key and app secret:
 
     dropbox(
         file_path: '/some/local-path/to/file.txt',
@@ -50,8 +62,7 @@ The default `write_mode` is `add`, which means that plugin will raise an error i
         file_path: '/some/local-path/to/file.txt',
         dropbox_path: '/path/to/Dropbox/destination/folder',
         write_mode: 'overwrite',
-        app_key: 'your-dropbox-app-key',
-        app_secret: 'your-dropbox-app-secret'
+        access_token: 'your-dropbox-access-token'
     )
 
 For the more fine-grained overwriting you can set the `update` write mode, and pass the current file revision to update:
@@ -61,8 +72,7 @@ For the more fine-grained overwriting you can set the `update` write mode, and p
         dropbox_path: '/path/to/Dropbox/destination/folder',
         write_mode: 'update',
         update_rev: 'filerevisiontoupdate',
-        app_key: 'your-dropbox-app-key',
-        app_secret: 'your-dropbox-app-secret'
+        access_token: 'your-dropbox-access-token'
     )
 
 The `update_rev` parameter is required for `update` write mode and ignored in other cases. Currently, if the current file revision on Dropbox doesn't match the provided revision, the plugin will fail (Dropbox API won't allow for the update).
