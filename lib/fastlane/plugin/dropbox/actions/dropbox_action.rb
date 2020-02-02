@@ -225,7 +225,7 @@ module Fastlane
                                        end),
           FastlaneCore::ConfigItem.new(key: :keychain_password,
                                        env_name: 'DROPBOX_KEYCHAIN_PASSWORD',
-                                       description: 'Password to unlock keychain. If not provided, the plugin would ask for password',
+                                       description: 'Password to unlock keychain. If not provided, the plugin will ask for password',
                                        type: String,
                                        optional: true),
           FastlaneCore::ConfigItem.new(key: :access_token,
