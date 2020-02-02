@@ -13,8 +13,6 @@ module Fastlane
         UI.message "Starting upload of #{params[:file_path]} to Dropbox"
         UI.message ''
 
-        params[:keychain] ||= default_keychain
-
         write_mode =
           if params[:write_mode].nil?
             'add'
@@ -31,7 +29,7 @@ module Fastlane
             params[:write_mode]
           end
 
-        access_token = params[:access_token] || get_token_from_keychain(params[:keychain], params[:keychain_password])
+        access_token = params[:access_token] || get_token_from_keychain(params[:keychain] ||= default_keychain, params[:keychain_password])
         unless access_token
           access_token = request_token(params[:app_key], params[:app_secret])
           unless save_token_to_keychain(params[:keychain], access_token)
