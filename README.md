@@ -25,8 +25,6 @@ This plugin relies on MacOS keychain (for storing your Dropbox access token), he
 
 In order to register a Dropbox app you need to go to [Dropbox Developers](https://www.dropbox.com/developers/apps) site and create your own app. 
 
-### Using access token
-
 1. For Fastlane you only need the access token (or the app key and app secret). You'll also have to come up with some name for the app, but this is not used by Fastlane in any way.
 1. You also don't need to apply for production state of your app, and keep it in development phase unless you make heavy use of it. Even Dropbox themselves encourage staying in development state when the app is used as an internal tool. Read more [here](https://www.dropbox.com/developers/reference/developer-guide#production-approval).
 1. You start with access for one user only, but in development state you can request access for up to 500 users, which should cover most of the use cases for Fastlane integration.
